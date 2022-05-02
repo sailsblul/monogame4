@@ -12,8 +12,11 @@ namespace monogame4
         Rectangle bombRect;
         SpriteFont timerFont;
         SoundEffect explode;
+        Texture2D explosion;
+        SoundEffectInstance explodeInstance;
         float seconds;
         float startTime;
+        bool exploded = false;
         private GraphicsDeviceManager _graphics;
         private SpriteBatch _spriteBatch;
 
@@ -41,6 +44,9 @@ namespace monogame4
             bombTexture = Content.Load<Texture2D>("bomb");
             timerFont = Content.Load<SpriteFont>("timer");
             explode = Content.Load<SoundEffect>("explosion");
+            explodeInstance = explode.CreateInstance();
+            explodeInstance.IsLooped = false;
+            explosion = Content.Load<Texture2D>("explosionimg");
             // TODO: use this.Content to load your game content here
         }
 
@@ -51,13 +57,22 @@ namespace monogame4
             mouseState = Mouse.GetState();
             // TODO: Add your update logic here
             seconds = (float)gameTime.TotalGameTime.TotalSeconds - startTime;
-            if (mouseState.LeftButton == ButtonState.Pressed)
-                startTime = (float)gameTime.TotalGameTime.TotalSeconds;
-            if (seconds >= 15)
+            if (!exploded)
             {
-                explode.Play();
-                startTime = (float)gameTime.TotalGameTime.TotalSeconds;
-                //Exit();
+                if (mouseState.LeftButton == ButtonState.Pressed)
+                    startTime = (float)gameTime.TotalGameTime.TotalSeconds;
+                if (seconds >= 15)
+                {
+                    exploded = true;
+                    explodeInstance.Play();
+                    startTime = (float)gameTime.TotalGameTime.TotalSeconds;
+                }
+            }
+            else
+            {
+                //the explode sound effect provided has a bit of silence at the end. kinda annoying but I dont feel like editing it
+                if (explodeInstance.State == SoundState.Stopped)
+                    Exit();
             }
             base.Update(gameTime);
         }
@@ -68,8 +83,13 @@ namespace monogame4
 
             // TODO: Add your drawing code here
             _spriteBatch.Begin();
-            _spriteBatch.Draw(bombTexture, bombRect, Color.White);
-            _spriteBatch.DrawString(timerFont, (15 - seconds).ToString("00.0"), new Vector2(300, 230), Color.Black);
+            if (exploded)
+                _spriteBatch.Draw(explosion, bombRect, Color.White);
+            else
+            {
+                _spriteBatch.Draw(bombTexture, bombRect, Color.White);
+                _spriteBatch.DrawString(timerFont, (15 - seconds).ToString("00.0"), new Vector2(300, 230), Color.Black);
+            }
             _spriteBatch.End();
             base.Draw(gameTime);
         }
